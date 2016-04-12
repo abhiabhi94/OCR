@@ -125,7 +125,7 @@ def main():
     npaContours, npaHierarchy = cv2.findContours(imgThreshCopy, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     #cv2.drawContours(imgTestingNumbers,npaContours,-1,(255,255,0),2)
     for npaContour in npaContours:
-        print cv2.contourArea(npaContour)
+        # print cv2.contourArea(npaContour)
         contourWithData = ContourWithData()                                             # instantiate a contour with data object
         contourWithData.npaContour = npaContour                                         # assign contour to contour with data
         contourWithData.boundingRect = cv2.boundingRect(contourWithData.npaContour)     # get the bounding rect
