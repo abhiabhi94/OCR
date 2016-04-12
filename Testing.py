@@ -2,7 +2,6 @@ import cv2
 import numpy as np
 import operator
 import os
-import generate_data
 
 # module level variables ##########################################################################
 MIN_CONTOUR_AREA = 50
@@ -10,10 +9,10 @@ RESIZED_IMAGE_WIDTH = 20
 RESIZED_IMAGE_HEIGHT = 20
 
 
-SZ=20
-bin_n = 16 # Number of bins
-affine_flags = cv2.WARP_INVERSE_MAP|cv2.INTER_LINEAR
-svm_params = dict( kernel_type = cv2.SVM_LINEAR,svm_type = cv2.SVM_C_SVC,C=2.67, gamma=5.383 )
+# SZ=20
+# bin_n = 16 # Number of bins
+# affine_flags = cv2.WARP_INVERSE_MAP|cv2.INTER_LINEAR
+# svm_params = dict( kernel_type = cv2.SVM_LINEAR,svm_type = cv2.SVM_C_SVC,C=2.67, gamma=5.383 )
 class ContourWithData():
 
     npaContour = None           # contour
@@ -35,18 +34,18 @@ class ContourWithData():
         if self.fltArea < MIN_CONTOUR_AREA: return False        # much better validity checking would be necessary
         return True
 
-def deskew(img):
-    cv2.imshow('img_start',img)
-    m = cv2.moments(img)
-    #print m['mu11']
-    if abs(m['mu02']) < 1e-2:
-        return img.copy()
-    skew = m['mu11']/m['mu02']
-    print skew
-    M = np.float32([[1, skew, -0.5*SZ*skew], [0, 1, 0]])
-    img = cv2.warpAffine(img,M,(SZ, SZ),flags=affine_flags)
-    cv2.imshow('img_end',img)
-    return img
+# def deskew(img):
+#     cv2.imshow('img_start',img)
+#     m = cv2.moments(img)
+#     #print m['mu11']
+#     if abs(m['mu02']) < 1e-2:
+#         return img.copy()
+#     skew = m['mu11']/m['mu02']
+#     print skew
+#     M = np.float32([[1, skew, -0.5*SZ*skew], [0, 1, 0]])
+#     img = cv2.warpAffine(img,M,(SZ, SZ),flags=affine_flags)
+#     cv2.imshow('img_end',img)
+#     return img
 
 def main():
     allContoursWithData = []
@@ -98,8 +97,8 @@ def main():
 
 ###################################################################
     
-    npaFlattenedImages= np.loadtxt("saved_data/flattened_images.txt",np.float32) 
-    npaClassifications= np.loadtxt("saved_data/classifications.txt", np.float32)
+    npaFlattenedImages= np.loadtxt("npaFlattenedImages.txt",np.float32) 
+    npaClassifications= np.loadtxt("npaClassifications", np.float32)
     kNearest = cv2.KNearest()
     kNearest.train(npaFlattenedImages, npaClassifications)
     #svm = cv2.SVM()
@@ -108,21 +107,22 @@ def main():
 
     #imgTestingNumbers = cv2.imread('samples/sample(9)/node'+str(6)+'.jpg')
     #imgTestingNumbers = cv2.imread('self_samples/5/sample1.png')
-    imgTestingNumbers = cv2.imread("self_samples/test11.jpg")
-    imgTestingNumbers = cv2.resize(imgTestingNumbers, (800, 600))
+    imgTestingNumbers = cv2.imread("test.jpg")
+    RP = imgTestingNumbers.shape[0] / 800 if imgTestingNumbers.shape[0] <= imgTestingNumbers.shape[1] else imgTestingNumbers.shape[1] / 800
+    imgTestingNumbers = cv2.resize (imgTestingNumbers, (imgTestingNumbers.shape[1] / RP, imgTestingNumbers.shape[0] / RP))
     #cv2.imshow('imgTestingNumber1',imgTestingNumbers)
     
 
 
     imgGray = cv2.cvtColor(imgTestingNumbers, cv2.COLOR_BGR2GRAY)
     imgBlurred = cv2.GaussianBlur(imgGray, (5,5), 0)
-    imgThresh = cv2.adaptiveThreshold(imgBlurred,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,cv2.THRESH_BINARY_INV,11,2)
-    cv2.imshow('imgThresh',imgThresh)
+    imgThresh = cv2.adaptiveThreshold(imgBlurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV,11,2)
+    # cv2.imshow('imgThresh',imgThresh)
     imgThreshCopy = imgThresh.copy()
 
 
 
-    npaContours, npaHierarchy = cv2.findContours(imgThreshCopy,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
+    npaContours, npaHierarchy = cv2.findContours(imgThreshCopy, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     #cv2.drawContours(imgTestingNumbers,npaContours,-1,(255,255,0),2)
     for npaContour in npaContours:
         print cv2.contourArea(npaContour)
@@ -139,12 +139,11 @@ def main():
 
     validContoursWithData.sort(key = operator.attrgetter("intRectX"))
     strFinalString = ""
-    i=0
-    a=0.0
-    b=0
-    z=0
+    i = 0
+    a = 0.0
+    b = 0
     for contourWithData in validContoursWithData:
-        i+=1
+        i += 1
         cv2.rectangle(imgTestingNumbers,(contourWithData.intRectX, contourWithData.intRectY),(contourWithData.intRectX + contourWithData.intRectWidth, contourWithData.intRectY + contourWithData.intRectHeight),(0, 255, 0),2)
         imgROI = imgThresh[contourWithData.intRectY : contourWithData.intRectY + contourWithData.intRectHeight,contourWithData.intRectX : contourWithData.intRectX + contourWithData.intRectWidth]
         imgROIResized = cv2.resize(imgROI, (RESIZED_IMAGE_WIDTH, RESIZED_IMAGE_HEIGHT))
@@ -159,30 +158,24 @@ def main():
         strCurrentChar = str(int(npaResults[0][0]))
         strFinalString = strFinalString + strCurrentChar
 
-        cv2.namedWindow('Girl Friend '+str(i),cv2.WINDOW_NORMAL)
-        cv2.imshow('Girl Friend '+str(i),imgROI)
-        
+        cv2.namedWindow('Fuck '+str(i),cv2.WINDOW_NORMAL)
+        cv2.imshow('Fuck '+str(i),imgROI)
         print strCurrentChar
-        
-        b=b+1
-        if cv2.waitKey(0) == 121:
-             a = a+1
+
+        b += 1
+
+        if (cv2.waitKey(0) & 255) == 121:  ### For Windows Os remove this 255 ###
+            a = a + 1
         cv2.destroyAllWindows()
-        
-        if strCurrentChar == '4':
-            a=a+1
-    z=(a/b)*100
-    print a,b,z
-    print 'Accuracy: ',z,' %'
+
+    print 'Accuracy:',a / b
 
     #print "\n" + strFinalString + "\n"
 
     cv2.imshow("imgTestingNumbers", imgTestingNumbers)
-    cv2.imwrite("photo_ocr_example.jpg",imgTestingNumbers)
+    # cv2.imwrite("photo_ocr_example.jpg",imgTestingNumbers)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
     return
-
-if __name__ == "__main__":
-    main()
             
+main()
