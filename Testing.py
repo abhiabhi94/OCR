@@ -1,13 +1,10 @@
-import cv2
-import numpy as np
-import operator
-import os
+import cv2, operator, os, numpy as np
 
 # module level variables ##########################################################################
 MIN_CONTOUR_AREA = 50
 RESIZED_IMAGE_WIDTH = 20
 RESIZED_IMAGE_HEIGHT = 20
-PATH = "test.jpg"
+PATH = "test 2.jpg"
 
 allContoursWithData = []
 validContoursWithData = []
@@ -27,6 +24,7 @@ class ContourWithData():
         self.intRectWidth = 0            # bounding rect width
         self.intRectHeight = 0           # bounding rect height
         self.fltArea = 0.0               # area of contour
+        self.aspectRatio = 0.0
 
     def rectDetails(self):               # calculate bounding rect info
         [intX, intY, intWidth, intHeight] = self.boundingRect
@@ -34,15 +32,16 @@ class ContourWithData():
         self.intRectY = intY
         self.intRectWidth = intWidth
         self.intRectHeight = intHeight
+        self.aspectRatio = float(intWidth) / intHeight
 
     def contourCheck(self):
-        if self.fltArea < MIN_CONTOUR_AREA: return False        # much better validity checking would be necessary
-        return True
+        if self.fltArea > MIN_CONTOUR_AREA and (0.5 < self.aspectRatio < 2): return True    # much better validity checking would be necessary  
+        return False
 
 
 def knn():
-    npaFlattenedImages= np.loadtxt("npaFlattenedImages.txt",np.float32) 
-    npaClassifications= np.loadtxt("npaClassifications", np.float32)
+    npaFlattenedImages= np.loadtxt("flattened_alphabets.txt",np.float32) 
+    npaClassifications= np.loadtxt("classification_alphabets.txt", np.float32)
     kNearest = cv2.KNearest()
     kNearest.train(npaFlattenedImages, npaClassifications)
     return kNearest
@@ -77,6 +76,16 @@ def getValidContours(allContoursWithData):
 
     validContoursWithData.sort(key = operator.attrgetter("intRectX"))
     return validContoursWithData
+
+def spaceCheck(contourWithData, i, length): 
+        currentCentroid = contourWithData.intRectX + contourWithData.intRectWidth / 2
+        if (i != length):
+            nextCentroid = validContoursWithData[i].intRectX + validContoursWithData[i].intRectWidth / 2
+        else:
+            nextCentroid = validContoursWithData[i-1].intRectX + validContoursWithData[i-1].intRectWidth / 2
+            # print strFinalString
+        if (nextCentroid - currentCentroid > 30): return True     #Much better Check required
+        return False
     
 def OCR(img, imgThresh, validContoursWithData):
     
@@ -84,13 +93,13 @@ def OCR(img, imgThresh, validContoursWithData):
     strFinalString = ""
     i = 0
     a = 0.0
+    length = len(validContoursWithData)
 
     for contourWithData in validContoursWithData:
         i += 1
-        cv2.rectangle(img,(contourWithData.intRectX, contourWithData.intRectY),(contourWithData.intRectX + contourWithData.intRectWidth, contourWithData.intRectY + contourWithData.intRectHeight),(0, 255, 0),2)
+        cv2.rectangle(img, (contourWithData.intRectX, contourWithData.intRectY),(contourWithData.intRectX + contourWithData.intRectWidth, contourWithData.intRectY + contourWithData.intRectHeight),(0, 255, 0),2)
         imgROI = imgThresh[contourWithData.intRectY : contourWithData.intRectY + contourWithData.intRectHeight,contourWithData.intRectX : contourWithData.intRectX + contourWithData.intRectWidth]
         imgROIResized = cv2.resize(imgROI, (RESIZED_IMAGE_WIDTH, RESIZED_IMAGE_HEIGHT))
-        npaROIResized = imgROIResized.reshape((1, RESIZED_IMAGE_WIDTH * RESIZED_IMAGE_HEIGHT))
         npaROIResized = imgROIResized.reshape((1, RESIZED_IMAGE_WIDTH * RESIZED_IMAGE_HEIGHT))
         #npaROIResized = deskew(npaROIResized)
         npaROIResized = np.float32(npaROIResized)
@@ -98,23 +107,29 @@ def OCR(img, imgThresh, validContoursWithData):
 
         retval, npaResults, neigh_resp, dists = kNearest.find_nearest(npaROIResized, k = 1)
         #npaResults = svm.predict_all(npaROIResized)
-        strCurrentChar = str(int(npaResults[0][0]))
-        strFinalString = strFinalString + strCurrentChar
+        strCurrentChar = chr(int(npaResults[0][0]))
+        
+        if (spaceCheck(contourWithData, i, length)):
+            strFinalString = strFinalString + strCurrentChar + " "
+        else:
+            strFinalString = strFinalString + strCurrentChar
 
-        cv2.namedWindow('Fuck '+str(i), cv2.WINDOW_NORMAL)
-        cv2.imshow('Fuck '+str(i), imgROI)
-        print strCurrentChar
+        # cv2.namedWindow('Fuck '+str(i), cv2.WINDOW_NORMAL)
+        # cv2.imshow('Fuck '+str(i), imgROI)
+        # print strCurrentChar
 
-        if (cv2.waitKey(0) & 255) == 121:  ### For Windows Os remove 255 from this line ###
-            a = a + 1
-        cv2.destroyAllWindows()
+        # if (cv2.waitKey(0) & 255) == 121:  ### For Windows Os remove 255 from this line ###
+        #     a = a + 1
+        # cv2.destroyAllWindows()
+        # print contourWithData.intRectX, contourWithData.intRectY
 
-    print 'Accuracy:', a/ i
+    # print 'Accuracy:', a/ i
+    print strFinalString
 
 def main():
 
     img = cv2.imread(PATH)
-    RP = img.shape[0]/ 800 if img.shape[0] <= img.shape[1] else img.shape[1]/ 800
+    RP = img.shape[0]/ 400 if img.shape[0] <= img.shape[1] else img.shape[1]/ 400
     img = cv2.resize (img, (img.shape[1] / RP, img.shape[0] / RP))
     #cv2.imshow('imgTestingNumber1',img)
     imgThreshCopy, imgThresh = preprocess(img)
