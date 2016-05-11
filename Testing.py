@@ -4,7 +4,7 @@ import cv2, operator, os, numpy as np
 MIN_CONTOUR_AREA = 50
 RESIZED_IMAGE_WIDTH = 20
 RESIZED_IMAGE_HEIGHT = 20
-PATH = "test C1.jpg"
+PATH = "samples/test C1.jpg"
 
 allContoursWithData = []
 validContoursWithData = []
@@ -97,7 +97,7 @@ def OCR(img, imgThresh, validContoursWithData):
 
     for contourWithData in validContoursWithData:
         i += 1
-        print contourWithData.intRectX, contourWithData.intRectY
+        # print contourWithData.intRectX, contourWithData.intRectY
         cv2.rectangle(img, (contourWithData.intRectX, contourWithData.intRectY),(contourWithData.intRectX + contourWithData.intRectWidth, contourWithData.intRectY + contourWithData.intRectHeight),(0, 255, 0),2)
         imgROI = imgThresh[contourWithData.intRectY : contourWithData.intRectY + contourWithData.intRectHeight,contourWithData.intRectX : contourWithData.intRectX + contourWithData.intRectWidth]
         imgROIResized = cv2.resize(imgROI, (RESIZED_IMAGE_WIDTH, RESIZED_IMAGE_HEIGHT))
