@@ -4,7 +4,7 @@ import cv2, operator, os, numpy as np
 MIN_CONTOUR_AREA = 50
 RESIZED_IMAGE_WIDTH = 20
 RESIZED_IMAGE_HEIGHT = 20
-PATH = "test 2.jpg"
+PATH = "test C1.jpg"
 
 allContoursWithData = []
 validContoursWithData = []
@@ -97,6 +97,7 @@ def OCR(img, imgThresh, validContoursWithData):
 
     for contourWithData in validContoursWithData:
         i += 1
+        print contourWithData.intRectX, contourWithData.intRectY
         cv2.rectangle(img, (contourWithData.intRectX, contourWithData.intRectY),(contourWithData.intRectX + contourWithData.intRectWidth, contourWithData.intRectY + contourWithData.intRectHeight),(0, 255, 0),2)
         imgROI = imgThresh[contourWithData.intRectY : contourWithData.intRectY + contourWithData.intRectHeight,contourWithData.intRectX : contourWithData.intRectX + contourWithData.intRectWidth]
         imgROIResized = cv2.resize(imgROI, (RESIZED_IMAGE_WIDTH, RESIZED_IMAGE_HEIGHT))
@@ -129,7 +130,8 @@ def OCR(img, imgThresh, validContoursWithData):
 def main():
 
     img = cv2.imread(PATH)
-    RP = img.shape[0]/ 400 if img.shape[0] <= img.shape[1] else img.shape[1]/ 400
+    # print img.shape
+    RP = img.shape[0]/ 600 if img.shape[0] <= img.shape[1] else img.shape[1]/ 600
     img = cv2.resize (img, (img.shape[1] / RP, img.shape[0] / RP))
     #cv2.imshow('imgTestingNumber1',img)
     imgThreshCopy, imgThresh = preprocess(img)
@@ -148,6 +150,5 @@ def main():
     # cv2.imwrite("photo_ocr_example.jpg",img)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
-    return
             
 main()
