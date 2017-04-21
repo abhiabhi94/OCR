@@ -1,11 +1,12 @@
 import cv2, operator, os, numpy as np
+# import label_image
 
 # module level variables ##########################################################################
 MIN_CONTOUR_AREA = 50
 RESIZED_IMAGE_WIDTH = 20
 RESIZED_IMAGE_HEIGHT = 20
-PATH = "samples/test C1.jpg"
-DIVISION_FACTOR = 600
+PATH = "test C1.jpg"
+DIVISION_FACTOR = 500
 H_SPAC = 40
 V_SPAC = 30
 
@@ -55,9 +56,13 @@ def knn():
 
 def preprocess(image):
     imgGray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    cv2.imshow('ImgGray', imgGray)
     imgBlurred = cv2.GaussianBlur(imgGray, (5,5), 0)
+    cv2.imshow('ImgBlurred', imgBlurred)
     imgThresh = cv2.adaptiveThreshold(imgBlurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV,11,2)
-    # cv2.imshow('imgThresh',imgThresh)
+    cv2.imshow('imgThresh', imgThresh)
+    cv2.imwrite('imgThresh.jpg', imgThresh)
+    cv2.waitKey(0)
     imgThreshCopy = imgThresh.copy()
     return imgThresh, imgThreshCopy
 
@@ -123,20 +128,24 @@ def OCR(img, imgThresh, validContoursWithData):
     # print length
     for contourWithData in validContoursWithData:
         i += 1
+        # print 'Recognising {}th character...{} left'.format(i + 1, length - i)
         # print contourWithData.intRectX, contourWithData.intRectY
         # if(i > 9 ):
         cv2.rectangle(img, (contourWithData.intRectX, contourWithData.intRectY),(contourWithData.intRectX + contourWithData.intRectWidth, contourWithData.intRectY + contourWithData.intRectHeight),(0, 255, 0),2)
         # if(i == 45):
-        # cv2.putText(img, str(i), (contourWithData.XCentroid, contourWithData.YCentroid),  cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
+        cv2.putText(img, str(i), (contourWithData.XCentroid, contourWithData.YCentroid),  cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
         imgROI = imgThresh[contourWithData.intRectY : contourWithData.intRectY + contourWithData.intRectHeight,contourWithData.intRectX : contourWithData.intRectX + contourWithData.intRectWidth]
-        imgROIResized = cv2.resize(imgROI, (RESIZED_IMAGE_WIDTH, RESIZED_IMAGE_HEIGHT))
+        # imgROI = img[contourWithData.intRectY : contourWithData.intRectY + contourWithData.intRectHeight,contourWithData.intRectX : contourWithData.intRectX + contourWithData.intRectWidth]
+        imgROIResized = cv2.resize(imgROI, (20, 20))
+        cv2.imwrite("a.jpg", imgROI)
+        # strCurrentChar = (label_image.recognize())
         npaROIResized = imgROIResized.reshape((1, RESIZED_IMAGE_WIDTH * RESIZED_IMAGE_HEIGHT))
-        #npaROIResized = deskew(npaROIResized)
+        # npaROIResized = deskew(npaROIResized)
         npaROIResized = np.float32(npaROIResized)
 
 
         retval, npaResults, neigh_resp, dists = kNearest.find_nearest(npaROIResized, k = 1)
-        #npaResults = svm.predict_all(npaROIResized)
+        # npaResults = svm.predict_all(npaROIResized)
         strCurrentChar = chr(int(npaResults[0][0]))
         
         line_change = formatCheck(contourWithData, i, length)
@@ -154,29 +163,34 @@ def OCR(img, imgThresh, validContoursWithData):
 
     # print 'Accuracy:', a/ i
     print strFinalString
+    # print strCurrentChar
 
-def main():
+def  ocr():
 
     img = cv2.imread(PATH)
     # print img.shape
     RP = img.shape[0]/ DIVISION_FACTOR if img.shape[0] <= img.shape[1] else img.shape[1]/ DIVISION_FACTOR
     img = cv2.resize (img, (img.shape[1] / RP, img.shape[0] / RP))
-    #cv2.imshow('imgTestingNumber1',img)
+    imgCopy = img.copy()
+    cv2.imshow('imgTestingNumber1',img)
     imgThreshCopy, imgThresh = preprocess(img)
 
     npaContours, npaHierarchy = cv2.findContours(imgThreshCopy, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    #cv2.drawContours(img,npaContours,-1,(255,255,0),2)
+    cv2.drawContours(img,npaContours,-1,(0,0,255),1)
+    cv2.imshow('Contours', img)
+    cv2.imwrite('Contours.jpg', img)
 
     allContoursWithData = getContourDetails(npaContours)
 
     validContoursWithData = getValidContours(allContoursWithData)
 
-    OCR(img, imgThresh, validContoursWithData)
+    OCR(imgCopy, imgThresh, validContoursWithData)
     #print "\n" + strFinalString + "\n"
 
     cv2.imshow("img", img)
+    cv2.imwrite('finalOutput.jpg', img)
     # cv2.imwrite("photo_ocr_example.jpg",img)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
             
-main()
+ocr()
